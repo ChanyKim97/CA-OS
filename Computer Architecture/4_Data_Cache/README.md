@@ -1,5 +1,4 @@
 # Project 3. MIPS Data Cache Simulator
-Skeleton developed by CMU, modified for AJOU SCE212
 
 More details are in [handout](./handout/Project_3.pdf)
 
