@@ -1,4 +1,4 @@
-## Project #2: Simulating Processor Schedulers
+## Project : Simulating Processor Schedulers
 
 
 ### Goal
