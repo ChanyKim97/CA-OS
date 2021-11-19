@@ -1,4 +1,4 @@
-## Project #1: My Powerful Shell
+## Project : My Powerful Shell
 
 
 ### Goal
