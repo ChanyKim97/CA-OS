@@ -1,6 +1,5 @@
-## Project #1: My Powerful Shell
+## Project : My Powerful Shell
 
-### *** Due on 12:00:00am, October 9 (Saturday)***
 
 ### Goal
 With the system calls learned in the class and a few additional ones, you are ready to manipulate processes in the system.

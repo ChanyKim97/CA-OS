@@ -1,6 +1,5 @@
-Computer Architecture Programming Assignment   
+Computer Architecture Programming 
 ---------------------------------------------
-2021 Spring SCE212, Ajou University
 
 * There are two small practice about basic c programming.
   * PA0-A: Comprehension about Pointer

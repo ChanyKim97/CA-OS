@@ -1,7 +1,5 @@
 ## Project #0: Warming up C programming
 
-### *** Due on 00:00, March 25 (Saturday) ***
-
 
 ### Goal
 To warm up C programming, implement the stack with list head. In addition, get familiar with PASubmit, our project assignment management system.

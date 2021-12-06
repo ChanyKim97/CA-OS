@@ -1,6 +1,4 @@
 # Project 2. MIPS Simulator
-Skeleton developed by CMU,
-modified for AJOU SCE212.
 
 More details are in [handout](./handout/Project_2.pdf).
 
