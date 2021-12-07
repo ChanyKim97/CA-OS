@@ -1,7 +1,5 @@
 ## Project #3: Virtual Memory Simulator
 
-### *** Due on 00:00, December 11 (Saturday) ***
-
 
 ### Goal
 Implement a mini virtual memory system simulator.
