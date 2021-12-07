@@ -101,6 +101,46 @@ void insert_tlb(unsigned int vpn, unsigned int pfn)
  */
 unsigned int alloc_page(unsigned int vpn, unsigned int rw)
 {
+	//NR_PTES_PER_PAGE 4라고 가정, two-level
+	//pd_index =>	ㅁ 0..
+	//				ㅁ 4..
+	//				ㅁ 8..
+	//				ㅁ 12..
+	//vpn 10이면 vpn / 4 => 2, vpn%4 => 2
+	//3번쨰 pd 3번쨰 pte로
+
+	//vpn / 16 => outer page directory
+	//vpn % 16 => page table entry
+	int pd_index = vpn / NR_PTES_PER_PAGE;
+	int pte_index = vpn % NR_PTES_PER_PAGE;
+
+	//시작부분
+	ptbr = &current->pagetable;
+	//outer page 비어있다면 할당
+	if (ptbr->outer_ptes[pd_index] == NULL) {
+		ptbr->outer_ptes[pd_index] = malloc(sizeof(struct pte_directory));
+	}
+
+	//outer에서 해당하는 frame찾아들어가서 pte중 해당하는 곳으로
+	struct pte* pte = &ptbr->outer_ptes[pd_index]->ptes[pte_index];
+
+	//pte 채우기
+	pte->valid = true;
+	if (rw == RW_READ) {
+		pte->writable = false;
+	}
+	else {
+		pte->writable = true;
+	}
+	for (int _pfn = 0; _pfn < NR_PAGEFRAMES; _pfn++) {
+		if (mapcounts[_pfn] == 0) {
+			//들어온 순서대로
+			pte->pfn = _pfn;
+			mapcounts[_pfn]++;
+			return _pfn;
+		}
+	}
+
 	return -1;
 }
 
@@ -116,6 +156,16 @@ unsigned int alloc_page(unsigned int vpn, unsigned int rw)
  */
 void free_page(unsigned int vpn)
 {
+	int pd_index = vpn / NR_PTES_PER_PAGE;
+	int pte_index = vpn % NR_PTES_PER_PAGE;
+
+	ptbr = &current->pagetable;
+	struct pte* pte = &ptbr->outer_ptes[pd_index]->ptes[pte_index];
+
+	mapcounts[pte->pfn]--;
+	pte->pfn = 0;
+	pte->valid = false;
+	pte->writable = false;
 }
 
 
