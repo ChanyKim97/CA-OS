@@ -190,6 +190,43 @@ void free_page(unsigned int vpn)
  */
 bool handle_page_fault(unsigned int vpn, unsigned int rw)
 {
+	//return ret about page fault!
+	//table access 안되는
+	int pd_index = vpn / NR_PTES_PER_PAGE;
+	int pte_index = vpn % NR_PTES_PER_PAGE;
+	ptbr = &current->pagetable;
+	struct pte* pte = &ptbr->outer_ptes[pd_index]->ptes[pte_index];
+
+	//0. page diretory is invalid
+	if (ptbr->outer_ptes[pd_index] == NULL) return false;
+
+	//1. pte is invalid
+	if (pte->valid == false) return false;
+
+	//2. pte is not writable but @rw is for write
+	if (pte->private == true) {
+		if (mapcounts[pte->pfn] >= 2) {
+			//다음 빈공간에
+			for (int i = 0; i < NR_PAGEFRAMES; i++) {
+				if (mapcounts[i] == 0) {
+					//원래 pfn -1
+					mapcounts[pte->pfn]--;
+					pte->private = false;
+					//새로운 곳에 할당
+					pte->pfn = i;
+					pte->writable = true;
+					mapcounts[i]++;
+					return true;
+				}
+			}
+		}
+		else if (mapcounts[pte->pfn] == 1) {
+			pte->writable = true;
+			pte->private = false;
+			return true;
+		}
+	}
+
 	return false;
 }
 
