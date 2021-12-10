@@ -66,6 +66,15 @@ extern unsigned int mapcounts[];
  */
 bool lookup_tlb(unsigned int vpn, unsigned int *pfn)
 {
+	for (int i = 0; i < NR_TLB_ENTRIES; i++) {
+		//초기값이 0 0이라 처리필요함
+		if (tlb[i].valid == true) {
+			if (tlb[i].vpn == vpn) {
+				*pfn = tlb[i].pfn;
+				return true;
+			}
+		}
+	}
 	return false;
 }
 
@@ -80,6 +89,14 @@ bool lookup_tlb(unsigned int vpn, unsigned int *pfn)
  */
 void insert_tlb(unsigned int vpn, unsigned int pfn)
 {
+	for (int i = 0; i < NR_TLB_ENTRIES; i++) {
+		if (!tlb[i].valid) {
+			tlb[i].valid = true;
+			tlb[i].vpn = vpn;
+			tlb[i].pfn = pfn;
+			return;
+		}
+	}
 }
 
 
@@ -169,6 +186,14 @@ void free_page(unsigned int vpn)
 	pte->valid = false;
 	pte->writable = false;
 	pte->private = false;
+
+	for (int i = 0; i < NR_TLB_ENTRIES; i++) {
+		if (tlb[i].vpn == vpn) {
+			tlb[i].valid = false;
+			tlb[i].vpn = 0;
+			tlb[i].pfn = 0;
+		}
+	}
 }
 
 
@@ -254,6 +279,13 @@ void switch_process(unsigned int pid)
 	struct process* tmp = NULL;
 	struct process* tmpN = NULL;
 
+	//*************** 나중에 TLB 처리해 해줘야함 **********************
+	for (int i = 0; i < NR_TLB_ENTRIES; i++) {
+		tlb[i].valid = false;
+		tlb[i].vpn = 0;
+		tlb[i].pfn = 0;
+	}
+
 	//pid가 있는 process라면 바로 process switch
 	list_for_each_entry_safe(tmp, tmpN, &processes, list) {
 		if (tmp->pid == pid) {
@@ -289,7 +321,6 @@ void switch_process(unsigned int pid)
 			}
 		}
 	}
-	//*************** 나중에 TLB 처리해 해줘야함 **********************
 
 	list_add_tail(&current->list, &processes);
 	current = forked;
