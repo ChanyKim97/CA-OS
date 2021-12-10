@@ -128,13 +128,15 @@ unsigned int alloc_page(unsigned int vpn, unsigned int rw)
 	pte->valid = true;
 	if (rw == RW_READ) {
 		pte->writable = false;
+		pte->private = false;
 	}
 	else {
 		pte->writable = true;
+		pte->private = true;
 	}
 	for (int _pfn = 0; _pfn < NR_PAGEFRAMES; _pfn++) {
+		//들어온 순서대로
 		if (mapcounts[_pfn] == 0) {
-			//들어온 순서대로
 			pte->pfn = _pfn;
 			mapcounts[_pfn]++;
 			return _pfn;
@@ -166,6 +168,7 @@ void free_page(unsigned int vpn)
 	pte->pfn = 0;
 	pte->valid = false;
 	pte->writable = false;
+	pte->private = false;
 }
 
 
@@ -211,5 +214,49 @@ bool handle_page_fault(unsigned int vpn, unsigned int rw)
  */
 void switch_process(unsigned int pid)
 {
+	struct process* tmp = NULL;
+	struct process* tmpN = NULL;
+
+	//pid가 있는 process라면 바로 process switch
+	list_for_each_entry_safe(tmp, tmpN, &processes, list) {
+		if (tmp->pid == pid) {
+			//현재 process 대기로, pid인 process 대기에서 제거, 현재 process 변경, ptbr은 변경된 프로세스로
+			list_add_tail(&current->list, &processes);
+			list_del_init(&tmp->list);
+			current = tmp;
+			ptbr = &current->pagetable;
+			return;
+		}
+	}
+
+	//없는 경우 @current에서 fork
+	struct process* forked = malloc(sizeof(struct process));
+	forked->pid = pid;
+
+	for (int i = 0; i < NR_PTES_PER_PAGE; i++) {
+		//현재있는 것 그대로 공간할당
+		if (current->pagetable.outer_ptes[i]) {
+			forked->pagetable.outer_ptes[i] = malloc(sizeof(struct pte_directory));
+			//2 level
+			//for문을 if문 밖에서 해서 할당안된곳에서 돌아서 segmentation fault
+			for (int j = 0; j < NR_PTES_PER_PAGE; j++) {
+				if (current->pagetable.outer_ptes[i]->ptes[j].valid) {
+					forked->pagetable.outer_ptes[i]->ptes[j].valid = true;
+					current->pagetable.outer_ptes[i]->ptes[j].writable = false;
+					forked->pagetable.outer_ptes[i]->ptes[j].writable = false;
+					forked->pagetable.outer_ptes[i]->ptes[j].pfn = current->pagetable.outer_ptes[i]->ptes[j].pfn;
+					//private true로 되는 경우는 후에 cow 다른 frame으로 처리해줄 것
+					forked->pagetable.outer_ptes[i]->ptes[j].private = current->pagetable.outer_ptes[i]->ptes[j].private;
+					mapcounts[forked->pagetable.outer_ptes[i]->ptes[j].pfn]++;
+				}
+			}
+		}
+	}
+	//*************** 나중에 TLB 처리해 해줘야함 **********************
+
+	list_add_tail(&current->list, &processes);
+	current = forked;
+	ptbr = &current->pagetable;
+	return;
 }
 
